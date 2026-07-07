@@ -1,0 +1,84 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model SuperAdmin {
+  id        String   @id @default(uuid())
+  fullName  String
+  email     String   @unique
+  phone     String   @unique
+  userName  String   @unique
+  passcode  String   // hashed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  accountManagers AccountManager[]
+  fieldManagers   FieldManager[]
+  officeAdmins    OfficeAdmin[]
+  projects        Project[]
+
+  @@map("super_admins")
+}
+
+model AccountManager {
+  id        String   @id @default(uuid())
+  fullName  String
+  userName  String   @unique
+  passcode  String  
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@map("account_managers")
+}
+
+model FieldManager {
+  id        String   @id @default(uuid())
+  fullName  String
+  userName  String   @unique
+  passcode  String   
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+
+  @@map("field_managers")
+}
+
+model OfficeAdmin {
+  id        String   @id @default(uuid())
+  fullName  String
+  userName  String   @unique
+  passcode  String   // hashed
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  @@map("office_admins")
+}
+
+model Project {
+  id        String   @id @default(uuid())
+  name      String
+  location  String
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  superAdminId String
+  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  @@map("projects")
+}
