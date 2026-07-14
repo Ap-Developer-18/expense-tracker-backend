@@ -19,26 +19,29 @@ import { UpdateAccountManagerDto } from "./dto/update-account-manager.dto";
 @ApiTags("Account Managers")
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles("SUPER_ADMIN")
 @Controller("account-managers")
 export class AccountManagersController {
   constructor(private service: AccountManagersService) {}
 
+  @Roles("SUPER_ADMIN")
   @Post()
   create(@Body() dto: CreateAccountManagerDto, @Req() req: any) {
     return this.service.create(dto, req.user.superAdminId);
   }
 
+  @Roles("SUPER_ADMIN", "OFFICE_ADMIN")
   @Get()
   findAll(@Req() req: any) {
     return this.service.findAll(req.user.superAdminId);
   }
 
+  @Roles("SUPER_ADMIN", "OFFICE_ADMIN")
   @Get(":id")
   findOne(@Param("id") id: string, @Req() req: any) {
     return this.service.findOne(id, req.user.superAdminId);
   }
 
+  @Roles("SUPER_ADMIN")
   @Patch(":id")
   update(
     @Param("id") id: string,
@@ -48,6 +51,7 @@ export class AccountManagersController {
     return this.service.update(id, dto, req.user.superAdminId);
   }
 
+  @Roles("SUPER_ADMIN")
   @Delete(":id")
   remove(@Param("id") id: string, @Req() req: any) {
     return this.service.remove(id, req.user.superAdminId);

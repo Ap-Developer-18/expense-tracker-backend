@@ -6,6 +6,10 @@ export class RegisterDto {
   @IsString()
   fullName!: string;
 
+  @ApiProperty({ example: "Acme Constructions Pvt Ltd" })
+  @IsString()
+  companyName!: string;
+
   @ApiProperty({ example: "superadmin" })
   @IsString()
   userName!: string;

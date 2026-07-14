@@ -6,6 +6,8 @@ import { AccountManagersModule } from "./account-managers/account-managers.modul
 import { FieldManagersModule } from "./field-managers/field-managers.module";
 import { OfficeAdminsModule } from "./office-admins/office-admins.module";
 import { ProjectsModule } from "./projects/projects.module";
+import { ProjectAssignmentsModule } from "./project-assignments/project-assignments.module";
+import { ExpensesModule } from "./expenses/expenses.module";
 
 @Module({
   imports: [
@@ -16,6 +18,8 @@ import { ProjectsModule } from "./projects/projects.module";
     FieldManagersModule,
     OfficeAdminsModule,
     ProjectsModule,
+    ProjectAssignmentsModule,
+    ExpensesModule,
   ],
 })
 export class AppModule {}

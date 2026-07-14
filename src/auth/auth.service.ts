@@ -43,6 +43,7 @@ export class AuthService {
     const admin = await this.prisma.superAdmin.create({
       data: {
         fullName: dto.fullName,
+        companyName: dto.companyName,
         userName: dto.userName,
         email: dto.email,
         phone: dto.phone,

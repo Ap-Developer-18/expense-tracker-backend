@@ -7,14 +7,15 @@ datasource db {
 }
 
 model SuperAdmin {
-  id        String   @id @default(uuid())
-  fullName  String
-  email     String   @unique
-  phone     String   @unique
-  userName  String   @unique
-  passcode  String   // hashed
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          String   @id @default(uuid())
+  fullName    String
+  companyName String
+  email       String   @unique
+  phone       String   @unique
+  userName    String   @unique
+  passcode    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   accountManagers AccountManager[]
   fieldManagers   FieldManager[]
@@ -36,6 +37,9 @@ model AccountManager {
   superAdminId String
   superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
+  projectAssignments ProjectAccountManager[]
+  reviewedExpenses   Expense[]               @relation("ExpenseReviewer")
+
   @@map("account_managers")
 }
 
@@ -51,6 +55,9 @@ model FieldManager {
   superAdminId String
   superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
+  projectAssignments ProjectFieldManager[]
+  expenses           Expense[]              @relation("FieldManagerExpenses")
+  incomingTransfers  Expense[]              @relation("TransferRecipient")
 
   @@map("field_managers")
 }
@@ -80,5 +87,101 @@ model Project {
 
   superAdminId String
   superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+
+  fieldManagerAssignments   ProjectFieldManager[]
+  accountManagerAssignments ProjectAccountManager[]
+  expenses                  Expense[]
+
   @@map("projects")
+}
+
+model ProjectFieldManager {
+  id             String   @id @default(uuid())
+  projectId      String
+  fieldManagerId String
+  isActive       Boolean  @default(true)
+  createdAt      DateTime @default(now())
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fieldManager FieldManager @relation(fields: [fieldManagerId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, fieldManagerId])
+  @@map("project_field_managers")
+}
+
+model ProjectAccountManager {
+  id               String   @id @default(uuid())
+  projectId        String
+  accountManagerId String
+  isActive         Boolean  @default(true)
+  createdAt        DateTime @default(now())
+
+  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  accountManager AccountManager @relation(fields: [accountManagerId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, accountManagerId])
+  @@map("project_account_managers")
+}
+
+enum ExpenseStatus {
+  PENDING
+  APPROVED
+  PARTIALLY_APPROVED
+  REJECTED
+}
+
+enum ExpenseMode {
+  CASH
+  UPI
+  BANK_TRANSFER
+  CHEQUE
+  OTHER
+}
+
+enum PaidForCategory {
+  MISCELLANEOUS   // Futkar Kharch
+  TRAVEL          // Yatra Kharch
+  PURCHASE        // Futkar Khareed
+  GST_INVOICE     // Gst Invoice
+  STAFF_PAYMENT   // Payment to Staff
+  TRANSFER        // Transfer to Staff
+  RETURN_TO_FIRM  // Returns to Firm
+}
+
+enum TransferStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+}
+
+model Expense {
+  id               String        @id @default(uuid())
+  projectId        String
+  fieldManagerId   String
+  submittedAmount  Float
+  approvedAmount   Float?
+  reimbursedAmount Float         @default(0)
+  status           ExpenseStatus @default(PENDING)
+  mode             ExpenseMode
+  receiver         String
+  paidFor          PaidForCategory
+  description      String?
+  expenseDate      DateTime      @default(now())
+
+  reviewedByAccountManagerId String?
+  reviewedByAccountManager   AccountManager? @relation("ExpenseReviewer", fields: [reviewedByAccountManagerId], references: [id])
+
+  // Transfer-specific fields (only set when paidFor = TRANSFER)
+  transferToFieldManagerId String?
+  transferToFieldManager   FieldManager?   @relation("TransferRecipient", fields: [transferToFieldManagerId], references: [id])
+  transferStatus           TransferStatus?
+  transferRespondedAt      DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  fieldManager FieldManager @relation("FieldManagerExpenses", fields: [fieldManagerId], references: [id], onDelete: Cascade)
+
+  @@map("expenses")
 }
