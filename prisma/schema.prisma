@@ -1,6 +1,3 @@
-// UPPERCASE ENGLISH COMMENTS PROVIDED FOR MULTI-TENANT BACKEND ENGINE ARCHITECTURE
-// INDICES AND RELATIONAL INTEGRITY PRESERVED TO HANDLE 10,000+ CONCURRENT PIPELINES
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -20,140 +17,156 @@ model PlatformOwner {
 }
 
 model FeatureUnlockRequest {
-  id            String   @id @default(uuid())
+  id            String     @id @default(uuid())
   superAdminId  String
-  requestedRole String   // SPECIFIES TIERS: PROJECT, FIELD_MANAGER, ACCOUNT_MANAGER, OFFICE_ADMIN
-  status        String   @default("PENDING") // MATRIX: PENDING, APPROVED, REJECTED
+  requestedRole String
+  status        String     @default("PENDING")
   message       String?
-  grantedLimit  Int?     // RETAINS CAP VALUE ASSIGNED BY PLATFORM OWNER
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-
+  grantedLimit  Int?
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
   superAdmin    SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
   @@map("feature_unlock_requests")
 }
 
 model SuperAdmin {
-  id           String   @id @default(uuid())
-  fullName     String
-  companyName  String
-  email        String   @unique
-  phone        String   @unique
-  userName     String   @unique
-  passcode     String
-  customLimits Json?    // RETAINS MULTI-TENANT DYNAMIC THRESHOLD CAPS FOR SCALE HANDLERS
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
-
+  id                    String                 @id @default(uuid())
+  fullName              String
+  companyName           String
+  email                 String                 @unique
+  phone                 String                 @unique
+  userName              String                 @unique
+  passcode              String
+  customLimits          Json?
+  createdAt             DateTime               @default(now())
+  updatedAt             DateTime               @updatedAt
   accountManagers       AccountManager[]
+  featureUnlockRequests FeatureUnlockRequest[]
   fieldManagers         FieldManager[]
   officeAdmins          OfficeAdmin[]
   projects              Project[]
-  featureUnlockRequests FeatureUnlockRequest[]
 
   @@map("super_admins")
 }
 
 model AccountManager {
-  id              String   @id @default(uuid())
-  fullName        String
-  userName        String   @unique
-  passcode        String  
-  displayPasscode String   // RETAINS UNCRYPTED PLAINTEXT BACKUP PASSWORDS FOR ACCESS PREVIEWS
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  superAdminId String
-  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
-
-  projectAssignments ProjectAccountManager[]
+  id                 String                  @id @default(uuid())
+  fullName           String
+  userName           String                  @unique
+  passcode           String
+  displayPasscode    String
+  isActive           Boolean                 @default(true)
+  createdAt          DateTime                @default(now())
+  updatedAt          DateTime                @updatedAt
+  superAdminId       String
+  superAdmin         SuperAdmin              @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
   reviewedExpenses   Expense[]               @relation("ExpenseReviewer")
+  projectAssignments ProjectAccountManager[]
 
   @@map("account_managers")
 }
 
 model FieldManager {
-  id              String   @id @default(uuid())
-  fullName        String
-  userName        String   @unique
-  passcode        String   
-  displayPasscode String   // RETAINS UNCRYPTED PLAINTEXT BACKUP PASSWORDS FOR ACCESS PREVIEWS
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  superAdminId String
-  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
-
+  id                 String                @id @default(uuid())
+  fullName           String
+  userName           String                @unique
+  passcode           String
+  displayPasscode    String
+  isActive           Boolean               @default(true)
+  createdAt          DateTime              @default(now())
+  updatedAt          DateTime              @updatedAt
+  superAdminId       String
+  expenses           Expense[]             @relation("FieldManagerExpenses")
+  incomingTransfers  Expense[]             @relation("TransferRecipient")
+  superAdmin         SuperAdmin            @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
   projectAssignments ProjectFieldManager[]
-  expenses           Expense[]              @relation("FieldManagerExpenses")
-  incomingTransfers  Expense[]              @relation("TransferRecipient")
 
   @@map("field_managers")
 }
 
 model OfficeAdmin {
-  id              String   @id @default(uuid())
+  id              String     @id @default(uuid())
   fullName        String
-  userName        String   @unique
-  passcode        String   // hashed
-  displayPasscode String   // RETAINS UNCRYPTED PLAINTEXT BACKUP PASSWORDS FOR ACCESS PREVIEWS
-  isActive        Boolean  @default(true)
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-
-  superAdminId String
-  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
+  userName        String     @unique
+  passcode        String
+  displayPasscode String
+  isActive        Boolean    @default(true)
+  createdAt       DateTime   @default(now())
+  updatedAt       DateTime   @updatedAt
+  superAdminId    String
+  superAdmin      SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
   @@map("office_admins")
 }
 
 model Project {
-  id        String   @id @default(uuid())
-  name      String
-  location  String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  superAdminId String
-  superAdmin   SuperAdmin @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
-
-  fieldManagerAssignments   ProjectFieldManager[]
-  accountManagerAssignments ProjectAccountManager[]
+  id                        String                  @id @default(uuid())
+  name                      String
+  location                  String
+  isActive                  Boolean                 @default(true)
+  createdAt                 DateTime                @default(now())
+  updatedAt                 DateTime                @updatedAt
+  superAdminId              String
   expenses                  Expense[]
+  accountManagerAssignments ProjectAccountManager[]
+  fieldManagerAssignments   ProjectFieldManager[]
+  superAdmin                SuperAdmin              @relation(fields: [superAdminId], references: [id], onDelete: Cascade)
 
   @@map("projects")
 }
 
 model ProjectFieldManager {
-  id             String   @id @default(uuid())
+  id             String       @id @default(uuid())
   projectId      String
   fieldManagerId String
-  isActive       Boolean  @default(true)
-  createdAt      DateTime @default(now())
-
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  fieldManager FieldManager @relation(fields: [fieldManagerId], references: [id], onDelete: Cascade)
+  isActive       Boolean      @default(true)
+  createdAt      DateTime     @default(now())
+  fieldManager   FieldManager @relation(fields: [fieldManagerId], references: [id], onDelete: Cascade)
+  project        Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, fieldManagerId])
   @@map("project_field_managers")
 }
 
 model ProjectAccountManager {
-  id               String   @id @default(uuid())
+  id               String         @id @default(uuid())
   projectId        String
   accountManagerId String
-  isActive         Boolean  @default(true)
-  createdAt        DateTime @default(now())
-
-  project        Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  accountManager AccountManager @relation(fields: [accountManagerId], references: [id], onDelete: Cascade)
+  isActive         Boolean        @default(true)
+  createdAt        DateTime       @default(now())
+  accountManager   AccountManager @relation(fields: [accountManagerId], references: [id], onDelete: Cascade)
+  project          Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, accountManagerId])
   @@map("project_account_managers")
+}
+
+model Expense {
+  id                         String          @id @default(uuid())
+  projectId                  String
+  fieldManagerId             String
+  submittedAmount            Float
+  approvedAmount             Float?
+  reimbursedAmount           Float           @default(0)
+  status                     ExpenseStatus   @default(PENDING)
+  mode                       ExpenseMode
+  receiver                   String
+  paidFor                    PaidForCategory
+  description                String?
+  expenseDate                DateTime        @default(now())
+  reviewedByAccountManagerId String?
+  transferToFieldManagerId   String?
+  transferStatus             TransferStatus?
+  transferRespondedAt        DateTime?
+  createdAt                  DateTime        @default(now())
+  updatedAt                  DateTime        @updatedAt
+  fieldManager               FieldManager    @relation("FieldManagerExpenses", fields: [fieldManagerId], references: [id], onDelete: Cascade)
+  project                    Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  reviewedByAccountManager   AccountManager? @relation("ExpenseReviewer", fields: [reviewedByAccountManagerId], references: [id])
+  transferToFieldManager     FieldManager?   @relation("TransferRecipient", fields: [transferToFieldManagerId], references: [id])
+
+  @@map("expenses")
 }
 
 enum ExpenseStatus {
@@ -172,49 +185,17 @@ enum ExpenseMode {
 }
 
 enum PaidForCategory {
-  MISCELLANEOUS   // Futkar Kharch
-  TRAVEL          // Yatra Kharch
-  PURCHASE        // Futkar Khareed
-  GST_INVOICE     // Gst Invoice
-  STAFF_PAYMENT   // Payment to Staff
-  TRANSFER        // Transfer to Staff
-  RETURN_TO_FIRM  // Returns to Firm
+  MISCELLANEOUS
+  TRAVEL
+  PURCHASE
+  GST_INVOICE
+  STAFF_PAYMENT
+  TRANSFER
+  RETURN_TO_FIRM
 }
 
 enum TransferStatus {
   PENDING
   ACCEPTED
   REJECTED
-}
-
-model Expense {
-  id               String        @id @default(uuid())
-  projectId        String
-  fieldManagerId   String
-  submittedAmount  Float
-  approvedAmount   Float?
-  reimbursedAmount Float         @default(0)
-  status           ExpenseStatus @default(PENDING)
-  mode             ExpenseMode
-  receiver         String
-  paidFor          PaidForCategory
-  description      String?
-  expenseDate      DateTime      @default(now())
-
-  reviewedByAccountManagerId String?
-  reviewedByAccountManager   AccountManager? @relation("ExpenseReviewer", fields: [reviewedByAccountManagerId], references: [id])
-
-  // Transfer-specific fields (only set when paidFor = TRANSFER)
-  transferToFieldManagerId String?
-  transferToFieldManager   FieldManager?   @relation("TransferRecipient", fields: [transferToFieldManagerId], references: [id])
-  transferStatus           TransferStatus?
-  transferRespondedAt      DateTime?
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  project      Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  fieldManager FieldManager @relation("FieldManagerExpenses", fields: [fieldManagerId], references: [id], onDelete: Cascade)
-
-  @@map("expenses")
 }
