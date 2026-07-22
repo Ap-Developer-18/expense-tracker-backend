@@ -29,10 +29,16 @@ export class FieldManagersController {
     return this.service.create(dto, req.user.superAdminId);
   }
 
-  @Roles("SUPER_ADMIN", "OFFICE_ADMIN", "FIELD_MANAGER")
+  @Roles("SUPER_ADMIN")
   @Get()
-  findAll(@Req() req: any) {
-    return this.service.findAll(req.user.superAdminId);
+  async findAll(@Req() req: any) {
+    const superAdminId = req.user.superAdminId;
+
+    if (req.user.role === "SUPER_ADMIN") {
+      return this.service.getAllCredentials(superAdminId);
+    }
+
+    return this.service.findAll(superAdminId);
   }
 
   @Roles("SUPER_ADMIN", "OFFICE_ADMIN")

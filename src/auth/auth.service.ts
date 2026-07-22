@@ -10,6 +10,7 @@ import { LoginDto } from "./dto/login.dto";
 import { RegisterDto } from "./dto/register.dto";
 
 type Role =
+  | "PLATFORM_OWNER"
   | "SUPER_ADMIN"
   | "ACCOUNT_MANAGER"
   | "FIELD_MANAGER"
@@ -56,6 +57,15 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    // STEP 1: Check if it is the Platform Owner
+    const platformOwner = await this.prisma.platformOwner.findUnique({
+      where: { userName: dto.userName },
+    });
+    if (platformOwner) {
+      return this.buildResponse(platformOwner, "PLATFORM_OWNER", dto.passcode);
+    }
+
+    // STEP 2: Super Admin fallback lookup
     const superAdmin = await this.prisma.superAdmin.findUnique({
       where: { userName: dto.userName },
     });
@@ -63,6 +73,7 @@ export class AuthService {
       return this.buildResponse(superAdmin, "SUPER_ADMIN", dto.passcode);
     }
 
+    // STEP 3: Managers lookup pipelines
     const accountManager = await this.prisma.accountManager.findUnique({
       where: { userName: dto.userName },
       include: { superAdmin: true },
@@ -124,21 +135,25 @@ export class AuthService {
       sub: user.id,
       userName: user.userName,
       role,
-      // Managers carry their Super Admin's id in the token too —
-      // useful later for RolesGuard-adjacent checks if needed.
-      superAdminId: role === "SUPER_ADMIN" ? user.id : user.superAdminId,
+      // Platform Owner operates globally, so it doesn't carry a superAdminId context
+      superAdminId:
+        role === "PLATFORM_OWNER"
+          ? undefined
+          : role === "SUPER_ADMIN"
+            ? user.id
+            : user.superAdminId,
     };
 
     return {
       accessToken: this.jwtService.sign(payload),
       user: {
         id: user.id,
-        fullName: user.fullName,
+        fullName: user.fullName || "Platform Owner", // Fallback for owner profile mapping
         userName: user.userName,
         role,
         // Only present for managers — tells them whose organization they belong to
         superAdmin:
-          role === "SUPER_ADMIN"
+          role === "SUPER_ADMIN" || role === "PLATFORM_OWNER"
             ? undefined
             : {
                 id: user.superAdmin.id,

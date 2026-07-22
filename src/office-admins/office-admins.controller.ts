@@ -32,7 +32,7 @@ export class OfficeAdminsController {
 
   @Get()
   findAll(@Req() req: any) {
-    return this.service.findAll(req.user.superAdminId);
+    return this.service.getAllCredentials(req.user.superAdminId);
   }
 
   @Get(":id")
